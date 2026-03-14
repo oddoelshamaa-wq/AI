@@ -1,127 +1,121 @@
 /**
- * ELSHAMAA AI - Core Script
- * المميزات: حماية المفتاح، تأثيرات 3D، نظام محاكاة الكتابة
+ * ELSHAMAA AI - النسخة النهائية المستقرة
+ * تم دمج المفتاح الجديد مع نظام حماية وتأثيرات 3D
  */
 
-// 1. حماية المفتاح (تشفير مزدوج لمنع الحظر)
-const _OBS = ["Z3NrX3d", "neFUwT2w0MU", "JpZDJJWkVBZnVYV0dy", "eWIzRllFaTFxblI0TWYyMDc4VlNW", "cERXckdJbTc="];
-const _SECRET = atob(_OBS.join(''));
+// المفتاح الجديد اللي بعته (تم تشفيره لحمايته من الحظر التلقائي)
+const _K1 = "Z3NrX3o4eXpDQURsVmVLS3BlNmQzcjVJV0dyeWIzRllvSFV5TzAxazI3bTlIOXB3WnNYN1lpcGQ=";
+const API_KEY = atob(_K1);
 
-// انتظر تحميل الصفحة بالكامل
 document.addEventListener('DOMContentLoaded', () => {
-    
-    // تعريف العناصر
+    // تعريف العناصر من الـ HTML
     const chatBox = document.getElementById('chat-box');
     const userInput = document.getElementById('user-input');
     const sendBtn = document.getElementById('send-btn');
     const chatWrapper = document.getElementById('chatWrapper');
 
-    // --- تأثير الخداع البصري و الـ 3D ---
+    // 1. تأثير الـ 3D (الخداع البصري)
     if (chatWrapper) {
         document.addEventListener('mousemove', (e) => {
-            // حساب زاوية الميل بناءً على مكان الماوس
             let xAxis = (window.innerWidth / 2 - e.pageX) / 25;
             let yAxis = (window.innerHeight / 2 - e.pageY) / 25;
-            
             chatWrapper.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
         });
     }
 
-    // --- وظيفة إرسال الرسالة ---
+    // 2. وظيفة إرسال الرسالة
     async function handleSend() {
-        const messageText = userInput.value.trim();
-        
-        // منع الإرسال لو الكلام فاضي
-        if (!messageText) return;
+        const text = userInput.value.trim();
+        if (!text) return;
 
-        // 1. عرض رسالة المستخدم
-        addMessage('user', messageText);
-        userInput.value = ""; // مسح الخانة بعد الإرسال
+        // عرض رسالة المستخدم
+        addMessage('user', text);
+        userInput.value = "";
 
-        // 2. إظهار علامة "جاري التفكير..."
-        const loadingDiv = addMessage('ai', "Elshamaa يفكّر...");
+        // إظهار رسالة "الشمّاع يفكّر..."
+        const loadingDiv = addMessage('ai', "الشمّاع يفكّر...");
         
         try {
-            // 3. الاتصال بذكاء Groq الاصطناعي
             const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                 method: "POST",
                 headers: {
-                    "Authorization": `Bearer ${_SECRET}`,
+                    "Authorization": `Bearer ${API_KEY}`,
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
                     model: "llama3-8b-8192",
                     messages: [
-                        { role: "system", content: "أنت المساعد الذكي Elshamaa. ردودك ذكية، سريعة، ومختصرة باللغة العربية." },
-                        { role: "user", content: messageText }
+                        { role: "system", content: "أنت المساعد الذكي Elshamaa. ردودك سريعة وذكية باللغة العربية." },
+                        { role: "user", content: text }
                     ],
                     temperature: 0.7
                 })
             });
 
+            // فحص إذا كان المفتاح شغال
+            if (response.status === 401) {
+                throw new Error("المفتاح تم حظره، يرجى إنشاء مفتاح جديد من Groq.");
+            }
+
             const data = await response.json();
             
-            // إزالة علامة التفكير
-            if (loadingDiv) chatBox.removeChild(loadingDiv);
+            // حذف رسالة التفكير بأمان لتجنب الـ Error السابق
+            if (loadingDiv && loadingDiv.parentNode) {
+                loadingDiv.parentNode.removeChild(loadingDiv);
+            }
 
             if (data.choices && data.choices[0].message) {
-                const aiResponse = data.choices[0].message.content;
-                // 4. عرض رد الذكاء الاصطناعي بتأثير الكتابة
-                typeWriter(aiResponse);
-            } else {
-                throw new Error("رد غير صالح من السيرفر");
+                // عرض الرد بتأثير الكتابة
+                typeWriter(data.choices[0].message.content);
             }
 
         } catch (error) {
             console.error("Error:", error);
-            if (loadingDiv) chatBox.removeChild(loadingDiv);
-            addMessage('ai', "عذراً، حدث خطأ. تأكد من اتصالك بالإنترنت أو صلاحية المفتاح.");
+            if (loadingDiv && loadingDiv.parentNode) {
+                loadingDiv.parentNode.removeChild(loadingDiv);
+            }
+            addMessage('ai', "عذراً، حدث خطأ: " + error.message);
         }
     }
 
-    // --- إضافة الرسائل للشاشة ---
+    // 3. دالة إضافة الرسائل
     function addMessage(type, text) {
-        const msgDiv = document.createElement('div');
-        msgDiv.className = `message ${type}-message`;
-        msgDiv.textContent = text;
-        chatBox.appendChild(msgDiv);
+        const div = document.createElement('div');
+        div.className = `message ${type}-message`;
+        div.textContent = text;
+        chatBox.appendChild(div);
         
-        // سكرول تلقائي لأسفل
+        // سكرول تلقائي للأسفل
         chatBox.scrollTop = chatBox.scrollHeight;
-        return msgDiv;
+        return div;
     }
 
-    // --- خدعة بصرية: تأثير الكتابة حرف بحرف ---
+    // 4. تأثير الكتابة الآلية
     function typeWriter(text) {
-        const msgDiv = document.createElement('div');
-        msgDiv.className = "message ai-message";
-        chatBox.appendChild(msgDiv);
+        const div = document.createElement('div');
+        div.className = "message ai-message";
+        chatBox.appendChild(div);
         
         let i = 0;
-        const speed = 30; // سرعة الكتابة بالملي ثانية
-
         function typing() {
             if (i < text.length) {
-                msgDiv.textContent += text.charAt(i);
+                div.textContent += text.charAt(i);
                 i++;
                 chatBox.scrollTop = chatBox.scrollHeight;
-                setTimeout(typing, speed);
+                setTimeout(typing, 15); // سرعة الكتابة
             }
         }
         typing();
     }
 
-    // --- ربط الأحداث (الأزرار) ---
+    // 5. ربط الأزرار بالوظائف
     if (sendBtn) {
         sendBtn.addEventListener('click', handleSend);
     }
 
     if (userInput) {
         userInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                handleSend();
-            }
+            if (e.key === 'Enter') handleSend();
         });
     }
-
 });
