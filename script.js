@@ -1,121 +1,98 @@
-/**
- * ELSHAMAA AI - النسخة النهائية المستقرة
- * تم دمج المفتاح الجديد مع نظام حماية وتأثيرات 3D
- */
+// 1. تعريف العناصر من الـ HTML
+const chatBox = document.getElementById('chat-box');
+const userInput = document.getElementById('user-input');
+const searchBtn = document.getElementById('search-btn');
 
-// المفتاح الجديد اللي بعته (تم تشفيره لحمايته من الحظر التلقائي)
-const _K1 = "Z3NrX3o4eXpDQURsVmVLS3BlNmQzcjVJV0dyeWIzRllvSFV5TzAxazI3bTlIOXB3WnNYN1lpcGQ=";
-const API_KEY = atob(_K1);
+// 2. مفتاح Groq الخاص بك (شغال 100% في مصر)
+const API_KEY = "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"; 
 
-document.addEventListener('DOMContentLoaded', () => {
-    // تعريف العناصر من الـ HTML
-    const chatBox = document.getElementById('chat-box');
-    const userInput = document.getElementById('user-input');
-    const sendBtn = document.getElementById('send-btn');
-    const chatWrapper = document.getElementById('chatWrapper');
+// وظيفة إرسال الرسالة
+async function sendMessage() {
+    const message = userInput.value.trim();
+    
+    // التأكد إن العميل كتب حاجة
+    if (message === "") return;
 
-    // 1. تأثير الـ 3D (الخداع البصري)
-    if (chatWrapper) {
-        document.addEventListener('mousemove', (e) => {
-            let xAxis = (window.innerWidth / 2 - e.pageX) / 25;
-            let yAxis = (window.innerHeight / 2 - e.pageY) / 25;
-            chatWrapper.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
+    // إظهار رسالة العميل في الشات
+    addMessage(message, 'user-message');
+    userInput.value = ""; // مسح الخانة بعد الإرسال
+
+    // إظهار علامة "جاري التفكير..."
+    const loadingId = addMessage("ثواني وبفكر... ⚡", 'ai-message');
+
+    try {
+        // الاتصال بسيرفر Groq (سريع جداً ومتاح في مصر)
+        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Authorization": "Bearer " + API_KEY,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                // بنستخدم أحدث موديل متاح ومجاني من Llama
+                model: "llama-3.3-70b-versatile", 
+                messages: [
+                    { role: "system", content: "أنت مساعد ذكي ومفيد وتتحدث اللغة العربية ببراعة." },
+                    { role: "user", content: message }
+                ],
+                temperature: 0.7
+            })
         });
-    }
 
-    // 2. وظيفة إرسال الرسالة
-    async function handleSend() {
-        const text = userInput.value.trim();
-        if (!text) return;
+        const data = await response.json();
 
-        // عرض رسالة المستخدم
-        addMessage('user', text);
-        userInput.value = "";
-
-        // إظهار رسالة "الشمّاع يفكّر..."
-        const loadingDiv = addMessage('ai', "الشمّاع يفكّر...");
-        
-        try {
-            const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${API_KEY}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    model: "llama3-8b-8192",
-                    messages: [
-                        { role: "system", content: "أنت المساعد الذكي Elshamaa. ردودك سريعة وذكية باللغة العربية." },
-                        { role: "user", content: text }
-                    ],
-                    temperature: 0.7
-                })
-            });
-
-            // فحص إذا كان المفتاح شغال
-            if (response.status === 401) {
-                throw new Error("المفتاح تم حظره، يرجى إنشاء مفتاح جديد من Groq.");
-            }
-
-            const data = await response.json();
-            
-            // حذف رسالة التفكير بأمان لتجنب الـ Error السابق
-            if (loadingDiv && loadingDiv.parentNode) {
-                loadingDiv.parentNode.removeChild(loadingDiv);
-            }
-
-            if (data.choices && data.choices[0].message) {
-                // عرض الرد بتأثير الكتابة
-                typeWriter(data.choices[0].message.content);
-            }
-
-        } catch (error) {
-            console.error("Error:", error);
-            if (loadingDiv && loadingDiv.parentNode) {
-                loadingDiv.parentNode.removeChild(loadingDiv);
-            }
-            addMessage('ai', "عذراً، حدث خطأ: " + error.message);
+        // فحص لو فيه رد سليم
+        if (response.ok) {
+            const aiResponse = data.choices[0].message.content;
+            // استبدال جملة التحميل بالرد الحقيقي
+            updateMessage(loadingId, aiResponse);
+        } else {
+            console.error("Groq Error:", data);
+            updateMessage(loadingId, "عذراً، حدث خطأ: " + data.error.message);
         }
-    }
 
-    // 3. دالة إضافة الرسائل
-    function addMessage(type, text) {
-        const div = document.createElement('div');
-        div.className = `message ${type}-message`;
-        div.textContent = text;
-        chatBox.appendChild(div);
-        
-        // سكرول تلقائي للأسفل
+    } catch (error) {
+        console.error("Connection Error:", error);
+        updateMessage(loadingId, "فشل الاتصال بالسيرفر، تأكد من وجود إنترنت.");
+    }
+}
+
+// --- وظائف مساعدة لإدارة الشات ---
+
+// وظيفة لإضافة رسالة جديدة للشاشة
+function addMessage(text, className) {
+    const msgDiv = document.createElement('div');
+    msgDiv.className = `message ${className}`;
+    msgDiv.innerText = text;
+    
+    const messageId = "msg-" + Date.now();
+    msgDiv.id = messageId;
+    
+    chatBox.appendChild(msgDiv);
+    
+    // التمرير لأسفل تلقائياً
+    chatBox.scrollTop = chatBox.scrollHeight;
+    
+    return messageId;
+}
+
+// وظيفة لتحديث رسالة موجودة (عشان نشيل "جاري التفكير")
+function updateMessage(id, newText) {
+    const msgDiv = document.getElementById(id);
+    if (msgDiv) {
+        msgDiv.innerText = newText;
         chatBox.scrollTop = chatBox.scrollHeight;
-        return div;
     }
+}
 
-    // 4. تأثير الكتابة الآلية
-    function typeWriter(text) {
-        const div = document.createElement('div');
-        div.className = "message ai-message";
-        chatBox.appendChild(div);
-        
-        let i = 0;
-        function typing() {
-            if (i < text.length) {
-                div.textContent += text.charAt(i);
-                i++;
-                chatBox.scrollTop = chatBox.scrollHeight;
-                setTimeout(typing, 15); // سرعة الكتابة
-            }
-        }
-        typing();
-    }
+// --- ربط الأزرار ---
 
-    // 5. ربط الأزرار بالوظائف
-    if (sendBtn) {
-        sendBtn.addEventListener('click', handleSend);
-    }
+// الإرسال عند الضغط على الزرار
+searchBtn.addEventListener('click', sendMessage);
 
-    if (userInput) {
-        userInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') handleSend();
-        });
+// الإرسال عند الضغط على Enter من الكيبورد
+userInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        sendMessage();
     }
 });
