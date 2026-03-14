@@ -7,26 +7,30 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- عناصر للخداع البصري في الخلفية -->
-    <div class="background-blobs">
-        <div class="blob"></div>
+    <div class="illusion-bg">
         <div class="blob"></div>
         <div class="blob"></div>
     </div>
 
-    <div class="chat-container">
-        <div class="chat-header">
-            <div class="logo-3d">ELSHAMAA</div>
-            <span>مساعدك الذكي</span>
-        </div>
-        
-        <div id="chat-box" class="chat-box">
-            <div class="message ai-message">أهلاً بك في عالم **Elshamaa**! كيف يمكنني إبهارك اليوم؟</div>
-        </div>
+    <!-- تأكد من وجود id="chatWrapper" -->
+    <div class="chat-wrapper" id="chatWrapper">
+        <div class="chat-container">
+            <div class="chat-header">
+                <h1 class="logo-3d">ELSHAMAA</h1>
+                <p>مساعدك الذكي</p>
+            </div>
+            
+            <!-- تأكد من وجود id="chat-box" -->
+            <div id="chat-box" class="chat-box">
+                <div class="message ai-message">أهلاً بك في عالم الشماع! كيف أساعدك؟</div>
+            </div>
 
-        <div class="input-area">
-            <input type="text" id="user-input" placeholder="اسأل Elshamaa..." autocomplete="off">
-            <button id="search-btn">إرسال</button>
+            <div class="input-area">
+                <!-- تأكد من وجود id="user-input" -->
+                <input type="text" id="user-input" placeholder="اكتب سؤالك هنا..." autocomplete="off">
+                <!-- تأكد من وجود id="send-btn" -->
+                <button id="send-btn">إرسال</button>
+            </div>
         </div>
     </div>
 
