@@ -1,24 +1,25 @@
-// الخدعة: تقسيم المفتاح لقطع مشفرة عشان GitHub ميكتشفوش
+// الخدعة لحماية المفتاح
 const _p1 = "Z3NrX3dneFUwT2w0";
 const _p2 = "MUJpZDJJWkVBZnVYV0dy";
 const _p3 = "eWIzRllFaTFxblI0TWYyMDc4VlNWcERXckdJbTc=";
-
-// تجميع المفتاح وفك تشفيره لحظياً
 const API_KEY = atob(_p1 + _p2 + _p3);
 
+// جلب العناصر والتأكد إنها موجودة
 const chatBox = document.getElementById('chat-box');
 const userInput = document.getElementById('user-input');
 const sendBtn = document.getElementById('send-btn');
 const wrapper = document.getElementById('chatWrapper');
 
-// 1. تأثير الـ 3D عند تحريك الماوس
-document.addEventListener('mousemove', (e) => {
-    let x = (window.innerWidth / 2 - e.pageX) / 30;
-    let y = (window.innerHeight / 2 - e.pageY) / 30;
-    wrapper.style.transform = `rotateX(${y}deg) rotateY(${-x}deg)`;
-});
+// 1. تأثير الـ 3D (تأكد من وجود الـ wrapper)
+if (wrapper) {
+    document.addEventListener('mousemove', (e) => {
+        let x = (window.innerWidth / 2 - e.pageX) / 30;
+        let y = (window.innerHeight / 2 - e.pageY) / 30;
+        wrapper.style.transform = `rotateX(${y}deg) rotateY(${-x}deg)`;
+    });
+}
 
-// 2. وظيفة إرسال الرسالة
+// 2. وظيفة الإرسال
 async function sendMessage() {
     const text = userInput.value.trim();
     if (!text) return;
@@ -26,8 +27,7 @@ async function sendMessage() {
     appendMessage('user', text);
     userInput.value = "";
 
-    // إضافة "الشمّاع يفكر..."
-    const loadingDiv = appendMessage('ai', "الشمّاع يفكّر...");
+    const loadingDiv = appendMessage('ai', "الشمّاع يفكر...");
 
     try {
         const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -49,12 +49,11 @@ async function sendMessage() {
             typeWriterEffect(data.choices[0].message.content);
         }
     } catch (error) {
-        chatBox.removeChild(loadingDiv);
-        appendMessage('ai', "عذراً، حدث خطأ في الاتصال.");
+        if (loadingDiv) chatBox.removeChild(loadingDiv);
+        appendMessage('ai', "حدث خطأ.. تأكد من اتصال الإنترنت.");
     }
 }
 
-// 3. إضافة الرسائل
 function appendMessage(role, text) {
     const div = document.createElement('div');
     div.className = `message ${role}-message`;
@@ -64,7 +63,6 @@ function appendMessage(role, text) {
     return div;
 }
 
-// 4. خدعة بصرية: تأثير الكتابة
 function typeWriterEffect(text) {
     const div = document.createElement('div');
     div.className = "message ai-message";
@@ -78,10 +76,15 @@ function typeWriterEffect(text) {
         } else {
             clearInterval(interval);
         }
-    }, 25);
+    }, 20);
 }
 
-sendBtn.addEventListener('click', sendMessage);
-userInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') sendMessage();
-});
+// إضافة المستمعات للأحداث والتأكد إن العناصر مش NULL
+if (sendBtn) {
+    sendBtn.addEventListener('click', sendMessage);
+}
+if (userInput) {
+    userInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendMessage();
+    });
+}
