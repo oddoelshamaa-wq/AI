@@ -3,17 +3,63 @@ const chatBox = document.getElementById('chat-box');
 const userInput = document.getElementById('user-input');
 const searchBtn = document.getElementById('search-btn');
 
-// مفتاح API (تأكد أن هذا المفتاح فعال)
+// مفتاح API (Groq)
 const API_KEY = "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"; 
 
-// 2. ذاكرة المحادثة وتعليمات النظام (هنا تضع رقمك وبياناتك)
+// --- إعدادات Firebase ---
+const firebaseConfig = {
+  apiKey: "AIzaSyAxMe4Sww_i_O3e_MQXn1dcgkRdKQh6pks",
+  authDomain: "elshamaa-ai.firebaseapp.com",
+  databaseURL: "https://elshamaa-ai-default-rtdb.firebaseio.com",
+  projectId: "elshamaa-ai",
+  storageBucket: "elshamaa-ai.firebasestorage.app",
+  messagingSenderId: "764546614549",
+  appId: "1:764546614549:web:0a766032decbf76dcb151c"
+};
+
+// توليد أو استعادة رقم تعريف العميل (للتفريق بين العملاء في لوحة التحكم)
+if (!localStorage.getItem('chat_session_id')) {
+    localStorage.setItem('chat_session_id', 'user_' + Math.floor(Math.random() * 1000000));
+}
+const sessionId = localStorage.getItem('chat_session_id');
+
+// تهيئة Firebase
+if (typeof firebase !== 'undefined') {
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    var database = firebase.database();
+}
+
+// وظيفة حفظ الرسائل وتحديث لوحة التحكم
+function syncWithFirebase(role, text) {
+    if (typeof database !== 'undefined') {
+        const chatRef = database.ref('chats/' + sessionId);
+        
+        // حفظ الرسالة في سجل المحادثة
+        chatRef.child('messages').push({
+            role: role,
+            text: text,
+            timestamp: Date.now()
+        });
+
+        // تحديث البيانات الأساسية لتظهر في قائمة لوحة التحكم
+        chatRef.child('metadata').set({
+            lastMessage: text,
+            lastUpdate: Date.now(),
+            status: "online"
+        });
+    }
+}
+
+// 2. ذاكرة المحادثة (تم استعادة النص الكامل كما طلبة)
 let messagesHistory = [
     { 
         role: "system", 
         content: `أنت المساعد الذكي الرسمي لشركة "الشماع للبرمجيات والنظم" (ELSHAMAA Tech).
         
         بيانات التواصل الرسمية للشركة:
-        - رقم الموبايل والواتساب: 01122884885 (قم بتغيير هذا الرقم لرقمك الحقيقي)
+        - رقم الموبايل والواتساب: 01122884885
         - البريد الإلكتروني: info@elshamaa.tech
         - الموقع: مصر، القاهرة.
 
@@ -31,20 +77,22 @@ function sendQuickMsg(text) {
     userInput.value = text;
     sendMessage();
 }
+// جعلها متاحة عالمياً لتعمل مع HTML onclick
+window.sendQuickMsg = sendQuickMsg;
 
 // 4. الوظيفة الأساسية لإرسال واستقبال الرسائل
 async function sendMessage() {
     const text = userInput.value.trim();
     if (text === "") return;
 
-    // إضافة رسالة المستخدم للواجهة
+    // إضافة رسالة المستخدم للواجهة وحفظها في Firebase
     addMessage(text, 'user-message');
     messagesHistory.push({ role: "user", content: text });
+    syncWithFirebase("user", text);
     
-    // مسح خانة الإدخال
     userInput.value = "";
     
-    // إنشاء "لوجو التحميل" الخاص بالشماع
+    // إظهار لوجو التحميل
     const loadingId = "load-" + Date.now();
     const loaderDiv = document.createElement('div');
     loaderDiv.id = loadingId;
@@ -72,22 +120,21 @@ async function sendMessage() {
         });
 
         const data = await response.json();
-
-        // إزالة لوجو التحميل فور وصول الرد
         loaderDiv.remove();
 
         if (response.ok) {
             const aiResponse = data.choices[0].message.content;
             
-            // إضافة رد البوت للذاكرة وللواجهة
+            // إضافة رد البوت للذاكرة وللواجهة ولـ Firebase
             messagesHistory.push({ role: "assistant", content: aiResponse });
             addMessage(aiResponse, 'ai-message');
+            syncWithFirebase("assistant", aiResponse);
         } else {
             addMessage("نعتذر، حدث خطأ في الاتصال بالسيرفر. حاول مرة أخرى.", 'ai-message');
         }
 
     } catch (error) {
-        loaderDiv.remove();
+        if(document.getElementById(loadingId)) loaderDiv.remove();
         console.error("Error:", error);
         addMessage("تأكد من اتصالك بالإنترنت وحاول مجدداً.", 'ai-message');
     }
@@ -98,22 +145,19 @@ function addMessage(text, className) {
     const msgDiv = document.createElement('div');
     msgDiv.className = `message ${className}`;
     
-    // إذا كان الرد من البوت، نستخدم مكتبة marked لتحويل الـ Markdown إلى HTML
     if (className === 'ai-message') {
+        // تحويل Markdown لـ HTML إذا كانت المكتبة موجودة
         msgDiv.innerHTML = typeof marked !== 'undefined' ? marked.parse(text) : text;
     } else {
         msgDiv.innerText = text;
     }
     
     chatBox.appendChild(msgDiv);
-    
-    // سكرول تلقائي لأسفل الشات
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-// 6. الاستماع لأحداث الضغط (Click & Enter)
+// 6. الاستماع للأحداث
 searchBtn.addEventListener('click', sendMessage);
-
 userInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
         sendMessage();
