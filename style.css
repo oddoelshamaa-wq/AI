@@ -174,3 +174,15 @@ body {
 /* تخصيص السكرول بار */
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-thumb { background: var(--glass-bg); border-radius: 10px; }
+
+/* Markdown styling for AI messages */
+.ai-message ul, .ai-message ol {
+    padding-right: 20px;
+    margin: 10px 0;
+}
+.ai-message li {
+    margin-bottom: 5px;
+}
+.ai-message strong {
+    color: #6c5ce7;
+}
