@@ -9,18 +9,29 @@
 body {
     font-family: 'Cairo', sans-serif;
     background: var(--bg-gradient);
-    height: 100vh;
+    min-height: 100vh;
     margin: 0;
     display: flex;
     justify-content: center;
     align-items: center;
-    overflow: hidden;
+    overflow-y: auto;
+    padding: 10px;
     perspective: 1000px;
+    box-sizing: border-box;
 }
 
 /* خلفية الفقاعات */
 .background-blobs { position: absolute; width: 100%; height: 100%; z-index: -1; overflow: hidden; }
-.blob { position: absolute; width: 300px; height: 300px; background: var(--primary-color); filter: blur(80px); border-radius: 50%; opacity: 0.3; animation: move 20s infinite alternate; }
+.blob { 
+    position: absolute; 
+    width: 300px; 
+    height: 300px; 
+    background: var(--primary-color); 
+    filter: blur(80px); 
+    border-radius: 50%; 
+    opacity: 0.3; 
+    animation: move 20s infinite alternate; 
+}
 .blob:nth-child(2) { background: #e84393; left: 50%; animation-delay: -5s; }
 .blob:nth-child(3) { background: #00cec9; bottom: 0; right: 0; animation-delay: -10s; }
 
@@ -28,8 +39,10 @@ body {
 
 /* حاوية الشات */
 .chat-container {
-    width: 450px;
-    height: 700px;
+    width: min(95vw, 450px);
+    height: min(90vh, 700px);
+    max-width: 450px;
+    max-height: 700px;
     background: var(--glass-bg);
     backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -39,6 +52,7 @@ body {
     box-shadow: var(--shadow-3d);
     transform: rotateX(2deg);
     transition: 0.5s;
+    box-sizing: border-box;
 }
 
 /* الهيدر واللوجو */
@@ -70,18 +84,142 @@ body {
 @keyframes pulse { 0% { transform: scale(0.9); opacity: 0.7; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(0.9); opacity: 0.7; } }
 
 /* أزرار سريعة */
-.quick-actions { display: flex; gap: 8px; padding: 10px 20px; overflow-x: auto; }
+.quick-actions { 
+    display: flex; 
+    gap: 6px; 
+    padding: 10px 15px; 
+    overflow-x: auto; 
+    flex-wrap: wrap; 
+}
 .quick-actions button {
-    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
-    color: white; padding: 7px 15px; border-radius: 20px; cursor: pointer; white-space: nowrap; font-size: 12px; transition: 0.3s;
+    background: rgba(255,255,255,0.05); 
+    border: 1px solid rgba(255,255,255,0.1);
+    color: white; 
+    padding: 8px 12px; 
+    border-radius: 20px; 
+    cursor: pointer; 
+    white-space: nowrap; 
+    font-size: 12px; 
+    transition: 0.3s;
+    flex-shrink: 0;
 }
 .quick-actions button:hover { background: var(--primary-color); }
 
 /* مدخلات النص */
-.input-area { padding: 20px; display: flex; gap: 10px; background: rgba(0,0,0,0.2); border-bottom-left-radius: 30px; border-bottom-right-radius: 30px; }
-#user-input { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); padding: 12px; border-radius: 12px; color: white; outline: none; }
-#search-btn { background: var(--primary-color); color: white; border: none; padding: 10px 20px; border-radius: 12px; cursor: pointer; }
+.input-area { 
+    padding: 15px; 
+    display: flex; 
+    gap: 8px; 
+    background: rgba(0,0,0,0.2); 
+    border-bottom-left-radius: 30px; 
+    border-bottom-right-radius: 30px; 
+}
+#user-input { 
+    flex: 1; 
+    background: rgba(255,255,255,0.05); 
+    border: 1px solid rgba(255,255,255,0.2); 
+    padding: 12px 15px; 
+    border-radius: 12px; 
+    color: white; 
+    outline: none; 
+    font-size: 14px;
+}
+#search-btn { 
+    background: var(--primary-color); 
+    color: white; 
+    border: none; 
+    padding: 12px 16px; 
+    border-radius: 12px; 
+    cursor: pointer; 
+    flex-shrink: 0;
+    min-width: 50px;
+}
 
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-thumb { background: var(--primary-color); border-radius: 10px; }
+
+/* Media Queries للشاشات المتجاوبة */
+@media (max-width: 768px) {
+    body {
+        padding: 5px;
+        align-items: flex-start;
+        padding-top: 20px;
+    }
+    
+    .chat-container {
+        width: 95vw;
+        height: 90vh;
+        border-radius: 20px;
+        transform: rotateX(0deg);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+    }
+    
+    .blob {
+        width: 200px;
+        height: 200px;
+        filter: blur(60px);
+    }
+    
+    .chat-header { padding: 15px; }
+    .header-content { gap: 12px; }
+    .main-logo-icon { width: 40px; height: 40px; font-size: 20px; }
+    .logo-3d { font-size: 20px; }
+    .subtitle { font-size: 0.75em; }
+    
+    .message { 
+        padding: 10px 15px; 
+        font-size: 13px; 
+        max-width: 90%; 
+        line-height: 1.5;
+    }
+    
+    .quick-actions { 
+        gap: 5px; 
+        padding: 8px 12px; 
+    }
+    .quick-actions button { 
+        padding: 6px 10px; 
+        font-size: 11px; 
+    }
+    
+    .input-area { padding: 12px; gap: 6px; }
+    #user-input { padding: 10px 12px; font-size: 13px; }
+    #search-btn { padding: 10px 14px; min-width: 45px; }
+    
+    .chat-box { padding: 15px; gap: 12px; }
+}
+
+@media (max-width: 480px) {
+    .chat-container {
+        width: 98vw;
+        height: 92vh;
+        border-radius: 15px;
+    }
+    
+    .blob {
+        width: 150px;
+        height: 150px;
+        filter: blur(40px);
+    }
+    
+    .main-logo-icon { width: 35px; height: 35px; font-size: 18px; }
+    .logo-3d { font-size: 18px; letter-spacing: 1px; }
+    
+    .message { 
+        padding: 8px 12px; 
+        font-size: 12px; 
+        max-width: 95%; 
+    }
+    
+    .quick-actions button { 
+        padding: 5px 8px; 
+        font-size: 10px; 
+    }
+    
+    #user-input { font-size: 12px; }
+    .chat-box { padding: 12px; gap: 10px; }
+    
+    /* إخفاء تأثيرات ثقيلة على الموبايل الصغير */
+    .chat-container { box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3); }
+}
