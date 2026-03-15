@@ -1,46 +1,60 @@
-// 1. الإعدادات الأساسية
+// 1. إعداد العناصر الأساسية
 const chatBox = document.getElementById('chat-box');
 const userInput = document.getElementById('user-input');
 const searchBtn = document.getElementById('search-btn');
 
-// تنبيه أمني: في الإنتاج الفعلي، يجب نقل هذا المفتاح لسيرفر خلفي (Backend)
+// مفتاح API (تأكد أن هذا المفتاح فعال)
 const API_KEY = "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"; 
 
-// 2. ذاكرة المحادثة (عشان البوت يفتكر الكلام اللي فات)
+// 2. ذاكرة المحادثة وتعليمات النظام (هنا تضع رقمك وبياناتك)
 let messagesHistory = [
     { 
         role: "system", 
         content: `أنت المساعد الذكي الرسمي لشركة "الشماع للبرمجيات والنظم" (ELSHAMAA Tech).
-        هويتك: خبير تقني ومسؤول مبيعات ودود.
-        خدمات شركتنا: 
-        1. تصميم وبرمجة مواقع الويب الاحترافية (Corporate Websites).
-        2. بناء المتاجر الإلكترونية (E-commerce).
-        3. تطوير أنظمة الإدارة المتكاملة (ERP, CRM, POS).
-        4. تطبيقات الموبايل (Android & iOS).
-        5. خدمات الاستضافة والتسويق الرقمي.
         
-        تعليمات الرد:
-        - ابدأ دائماً بالترحيب بالعميل بأسلوب راقٍ.
-        - إذا سأل العميل عن تكلفة، اطلب منه تفاصيل المشروع لتقديم عرض سعر دقيق.
-        - حاول إقناع العميل بجودة أنظمتنا وسرعتها.
-        - استخدم لغة عربية احترافية وسهلة، واستخدم الإيموجي المناسبة للبيزنس.
-        - إذا سأل عن التواصل، وجهه لترك رسالة هنا أو التواصل عبر واتساب الشركة.` 
+        بيانات التواصل الرسمية للشركة:
+        - رقم الموبايل والواتساب: 01122884885 (قم بتغيير هذا الرقم لرقمك الحقيقي)
+        - البريد الإلكتروني: info@elshamaa.tech
+        - الموقع: مصر، القاهرة.
+
+        هويتك: خبير تقني محترف. 
+        خدماتنا: برمجة المواقع، المتاجر الإلكترونية، أنظمة الإدارة ERP، وتطبيقات الأندرويد والآيفون.
+        
+        تعليمات هامة:
+        - إذا سألك العميل "ازاي اتواصل معاكم" أو طلب "رقم الموبايل"، أعطه الرقم المذكور أعلاه فوراً.
+        - استخدم لغة عربية مهذبة واحترافية مع إيموجي مناسبة.` 
     }
 ];
 
-// 3. وظيفة إرسال الرسالة
+// 3. وظيفة الأزرار السريعة (Quick Buttons)
+function sendQuickMsg(text) {
+    userInput.value = text;
+    sendMessage();
+}
+
+// 4. الوظيفة الأساسية لإرسال واستقبال الرسائل
 async function sendMessage() {
     const text = userInput.value.trim();
     if (text === "") return;
 
-    // إضافة رسالة المستخدم للواجهة وللتاريخ
+    // إضافة رسالة المستخدم للواجهة
     addMessage(text, 'user-message');
     messagesHistory.push({ role: "user", content: text });
     
+    // مسح خانة الإدخال
     userInput.value = "";
     
-    // رسالة انتظار
-    const loadingId = addMessage("جاري تحضير الرد... ✨", 'ai-message');
+    // إنشاء "لوجو التحميل" الخاص بالشماع
+    const loadingId = "load-" + Date.now();
+    const loaderDiv = document.createElement('div');
+    loaderDiv.id = loadingId;
+    loaderDiv.className = "message ai-message shamaa-loader";
+    loaderDiv.innerHTML = `
+        <div class="shamaa-pulse">E</div>
+        <span style="font-size: 13px; color: #666; font-weight: bold;">الشماع يجهز الرد...</span>
+    `;
+    chatBox.appendChild(loaderDiv);
+    chatBox.scrollTop = chatBox.scrollHeight;
 
     try {
         const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -52,62 +66,56 @@ async function sendMessage() {
             body: JSON.stringify({
                 model: "llama-3.3-70b-versatile",
                 messages: messagesHistory,
-                temperature: 0.6, // درجة الإبداع (0.6 مناسبة للبيزنس)
+                temperature: 0.6,
                 max_tokens: 1000
             })
         });
 
         const data = await response.json();
 
+        // إزالة لوجو التحميل فور وصول الرد
+        loaderDiv.remove();
+
         if (response.ok) {
             const aiResponse = data.choices[0].message.content;
             
-            // إضافة رد البوت للتاريخ (عشان يفتكره في السؤال اللي جاي)
+            // إضافة رد البوت للذاكرة وللواجهة
             messagesHistory.push({ role: "assistant", content: aiResponse });
-            
-            // تحديث الواجهة بالرد المنسق
-            updateMessage(loadingId, aiResponse);
+            addMessage(aiResponse, 'ai-message');
         } else {
-            updateMessage(loadingId, "نعتذر، واجهت مشكلة تقنية بسيطة. حاول مرة أخرى.");
+            addMessage("نعتذر، حدث خطأ في الاتصال بالسيرفر. حاول مرة أخرى.", 'ai-message');
         }
 
     } catch (error) {
+        loaderDiv.remove();
         console.error("Error:", error);
-        updateMessage(loadingId, "تأكد من اتصالك بالإنترنت، وحاول مجدداً.");
+        addMessage("تأكد من اتصالك بالإنترنت وحاول مجدداً.", 'ai-message');
     }
 }
 
-// 4. وظائف المساعدة للواجهة
+// 5. وظيفة إضافة الرسائل وتنسيقها
 function addMessage(text, className) {
     const msgDiv = document.createElement('div');
     msgDiv.className = `message ${className}`;
     
-    // إذا كان البوت، نستخدم marked لتحويل الـ Markdown لـ HTML
+    // إذا كان الرد من البوت، نستخدم مكتبة marked لتحويل الـ Markdown إلى HTML
     if (className === 'ai-message') {
         msgDiv.innerHTML = typeof marked !== 'undefined' ? marked.parse(text) : text;
     } else {
         msgDiv.innerText = text;
     }
-
-    const messageId = "msg-" + Date.now();
-    msgDiv.id = messageId;
     
     chatBox.appendChild(msgDiv);
+    
+    // سكرول تلقائي لأسفل الشات
     chatBox.scrollTop = chatBox.scrollHeight;
-    return messageId;
 }
 
-function updateMessage(id, newText) {
-    const msgDiv = document.getElementById(id);
-    if (msgDiv) {
-        // تحويل الرد النهائي لشكل احترافي
-        msgDiv.innerHTML = typeof marked !== 'undefined' ? marked.parse(newText) : newText;
-        chatBox.scrollTop = chatBox.scrollHeight;
-    }
-}
-
-// 5. الأحداث (Events)
+// 6. الاستماع لأحداث الضغط (Click & Enter)
 searchBtn.addEventListener('click', sendMessage);
+
 userInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') sendMessage();
+    if (e.key === 'Enter') {
+        sendMessage();
+    }
 });
