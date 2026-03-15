@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم الشماع | مراقبة المحادثات</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #6c5ce7;
+            --bg-color: #f0f2f5;
+            --sidebar-width: 350px;
+            --user-msg: #ffffff;
+            --ai-msg: #dcf8c6;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            background: var(--bg-color);
+            overflow: hidden;
+        }
+
+        /* القائمة الجانبية */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: #fff;
+            border-left: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            background: var(--primary-color);
+            color: white;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .chat-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .chat-item {
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .chat-item:hover {
+            background: #f8f9fa;
+        }
+
+        .chat-item.active {
+            background: #e8e6ff;
+            border-right: 5px solid var(--primary-color);
+        }
+
+        .chat-item .user-id {
+            font-weight: bold;
+            color: #333;
+            font-size: 0.9rem;
+        }
+
+        .chat-item .last-msg {
+            font-size: 0.8rem;
+            color: #777;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* منطقة المحادثة الرئيسية */
+        .main-chat {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #e5ddd5; /* لون خلفية الواتساب الشهير */
+            position: relative;
+        }
+
+        .chat-header {
+            padding: 15px 25px;
+            background: #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .messages-container {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* فقاعات الرسائل */
+        .msg {
+            max-width: 75%;
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-size: 14px;
+            line-height: 1.6;
+            position: relative;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .msg.user {
+            align-self: flex-start;
+            background: var(--user-msg);
+            color: #000;
+            border-top-right-radius: 0;
+        }
+
+        .msg.assistant {
+            align-self: flex-end;
+            background: var(--ai-msg);
+            color: #000;
+            border-top-left-radius: 0;
+        }
+
+        .msg-info {
+            display: block;
+            font-size: 10px;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        /* حالة فارغة */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #888;
+        }
+
+        /* سكرول بار احترافي */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-header">محادثات العملاء النشطة</div>
+        <div id="chat-list" class="chat-list">
+            <div class="empty-state">جاري تحميل المحادثات...</div>
+        </div>
+    </div>
+
+    <div class="main-chat">
+        <div class="chat-header">
+            <span id="active-user-title">اختر عميل لمشاهدة المحادثة</span>
+            <span id="session-id-display" style="font-size: 12px; color: #888;"></span>
+        </div>
+        
+        <div id="messages-container" class="messages-container">
+            <div class="empty-state">
+                <h3>مرحباً بك في لوحة تحكم الشماع</h3>
+                <p>اختر أي محادثة من القائمة اليمنى لعرض تفاصيلها فوراً.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- استدعاء Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // بيانات Firebase الخاصة بك
+        const firebaseConfig = {
+            apiKey: "AIzaSyAxMe4Sww_i_O3e_MQXn1dcgkRdKQh6pks",
+            authDomain: "elshamaa-ai.firebaseapp.com",
+            databaseURL: "https://elshamaa-ai-default-rtdb.firebaseio.com",
+            projectId: "elshamaa-ai",
+            storageBucket: "elshamaa-ai.firebasestorage.app",
+            messagingSenderId: "764546614549",
+            appId: "1:764546614549:web:0a766032decbf76dcb151c",
+            measurementId: "G-NW29XPP4L6"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const chatListDiv = document.getElementById('chat-list');
+        const messagesDiv = document.getElementById('messages-container');
+        const headerTitle = document.getElementById('active-user-title');
+        const sessionIdDisplay = document.getElementById('session-id-display');
+
+        let currentActiveId = null;
+
+        // 1. مراقبة قائمة المحادثات بالكامل
+        onValue(ref(db, 'chats'), (snapshot) => {
+            const chats = snapshot.val();
+            chatListDiv.innerHTML = "";
+
+            if (!chats) {
+                chatListDiv.innerHTML = '<div class="empty-state">لا توجد محادثات حتى الآن.</div>';
+                return;
+            }
+
+            // تحويل الكائن لمصفوفة لترتيبها حسب الأحدث
+            const sessionIds = Object.keys(chats).reverse();
+
+            sessionIds.forEach(id => {
+                const meta = chats[id].metadata || {};
+                const item = document.createElement('div');
+                item.className = `chat-item ${currentActiveId === id ? 'active' : ''}`;
+                
+                item.innerHTML = `
+                    <div class="user-id">العميل: ${id.replace('user_', '')}</div>
+                    <div class="last-msg">${meta.lastMessage || 'محادثة جديدة...'}</div>
+                `;
+
+                item.onclick = () => {
+                    // تحديث الشكل النشط
+                    document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
+                    item.classList.add('active');
+                    loadChat(id);
+                };
+
+                chatListDiv.appendChild(item);
+            });
+        });
+
+        // 2. وظيفة تحميل رسائل محادثة معينة
+        function loadChat(sessionId) {
+            currentActiveId = sessionId;
+            headerTitle.innerText = "محادثة العميل الحالية";
+            sessionIdDisplay.innerText = "ID: " + sessionId;
+
+            // الاستماع للرسائل داخل هذه الجلسة
+            onValue(ref(db, `chats/${sessionId}/messages`), (snapshot) => {
+                if (currentActiveId !== sessionId) return; // تأكد أن المستخدم لم يغير المحادثة بسرعة
+
+                messagesDiv.innerHTML = "";
+                const msgs = snapshot.val();
+
+                if (!msgs) {
+                    messagesDiv.innerHTML = '<div class="empty-state">لا توجد رسائل في هذه المحادثة.</div>';
+                    return;
+                }
+
+                Object.keys(msgs).forEach(key => {
+                    const m = msgs[key];
+                    const msgDiv = document.createElement('div');
+                    msgDiv.className = `msg ${m.role}`; // user أو assistant
+                    
+                    const roleName = m.role === 'user' ? 'العميل' : 'بوت الشماع';
+                    msgDiv.innerHTML = `
+                        <span class="msg-info">${roleName}</span>
+                        ${m.text.replace(/\n/g, '<br>')}
+                    `;
+                    
+                    messagesDiv.appendChild(msgDiv);
+                });
+
+                // سكرول تلقائي لآخر رسالة
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            });
+        }
+    </script>
+</body>
+</html>
