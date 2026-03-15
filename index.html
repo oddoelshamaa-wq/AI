@@ -3,12 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ELSHAMAA AI</title>
+    <title>ELSHAMAA AI - الشماع للبرمجيات</title>
+    <!-- خط Cairo من جوجل -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <!-- مكتبة الأيقونات -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
-    <!-- عناصر للخداع البصري في الخلفية -->
+    <!-- خلفية متحركة -->
     <div class="background-blobs">
         <div class="blob"></div>
         <div class="blob"></div>
@@ -16,18 +20,38 @@
     </div>
 
     <div class="chat-container">
+        <!-- الهيدر المطور باللوجو -->
         <div class="chat-header">
-            <div class="logo-3d">ELSHAMAA</div>
-            <span>مساعدك الذكي</span>
+            <div class="header-content">
+                <div class="logo-wrapper">
+                    <div class="main-logo-icon">E</div>
+                    <span class="status-dot"></span>
+                </div>
+                <div class="text-info">
+                    <div class="logo-3d">ELSHAMAA</div>
+                    <span class="subtitle">المساعد الذكي للشماع تيك</span>
+                </div>
+            </div>
         </div>
         
+        <!-- منطقة الرسائل -->
         <div id="chat-box" class="chat-box">
-            <div class="message ai-message">أهلاً بك في عالم **Elshamaa**! كيف يمكنني إبهارك اليوم؟</div>
+            <div class="message ai-message">
+                أهلاً بك في **الشماع للبرمجيات والنظم**. أنا مساعدك الذكي، كيف يمكنني مساعدتك في تطوير مشروعك اليوم؟ 🚀
+            </div>
         </div>
 
+        <!-- أزرار الخدمات السريعة -->
+        <div class="quick-actions">
+            <button onclick="sendQuickMsg('ما هي خدمات شركة الشماع؟')">🛠 خدماتنا</button>
+            <button onclick="sendQuickMsg('أريد برمجة موقع احترافي')">🌐 برمجة مواقع</button>
+            <button onclick="sendQuickMsg('كيف يمكنني التواصل معكم؟')">📞 تواصل معنا</button>
+        </div>
+
+        <!-- منطقة الإدخال -->
         <div class="input-area">
-            <input type="text" id="user-input" placeholder="اسأل Elshamaa..." autocomplete="off">
-            <button id="search-btn">إرسال</button>
+            <input type="text" id="user-input" placeholder="اسأل الشماع عن حلولنا البرمجية..." autocomplete="off">
+            <button id="search-btn"><i class="fas fa-paper-plane"></i></button>
         </div>
     </div>
 
