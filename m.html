@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة تحكم الشماع | مراقبة المحادثات</title>
+    <title>لوحة تحكم الشماع | مراقبة وحذف المحادثات</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary-color: #6c5ce7;
+            --danger-color: #ff7675;
             --bg-color: #f0f2f5;
             --sidebar-width: 350px;
             --user-msg: #ffffff;
@@ -40,7 +41,6 @@
             text-align: center;
             font-size: 1.2rem;
             font-weight: bold;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
         .chat-list {
@@ -54,60 +54,21 @@
             cursor: pointer;
             transition: 0.2s;
             display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        .chat-item:hover {
-            background: #f8f9fa;
-        }
-
-        .chat-item.active {
-            background: #e8e6ff;
-            border-right: 5px solid var(--primary-color);
-        }
-
-        .chat-item .user-id {
-            font-weight: bold;
-            color: #333;
-            font-size: 0.9rem;
-        }
-
-        .chat-item .last-msg {
-            font-size: 0.8rem;
-            color: #777;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        /* منطقة المحادثة الرئيسية */
-        .main-chat {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: #e5ddd5; /* لون خلفية الواتساب الشهير */
-            position: relative;
-        }
-
-        .chat-header {
-            padding: 15px 25px;
-            background: #fff;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            font-weight: bold;
-            display: flex;
-            align-items: center;
             justify-content: space-between;
+            align-items: center;
         }
 
-        .messages-container {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
+        .chat-item:hover { background: #f8f9fa; }
+        .chat-item.active { background: #e8e6ff; border-right: 5px solid var(--primary-color); }
+
+        .chat-info { flex: 1; overflow: hidden; }
+        .chat-item .user-id { font-weight: bold; color: #333; font-size: 0.9rem; }
+        .chat-item .last-msg { font-size: 0.8rem; color: #777; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* منطقة المحادثة */
+        .main-chat { flex: 1; display: flex; flex-direction: column; background: #e5ddd5; position: relative; }
+        .chat-header { padding: 15px 25px; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.05); font-weight: bold; display: flex; justify-content: space-between; }
+        .messages-container { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
 
         /* فقاعات الرسائل */
         .msg {
@@ -115,44 +76,34 @@
             padding: 10px 15px;
             border-radius: 10px;
             font-size: 14px;
-            line-height: 1.6;
             position: relative;
             box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            group: hover;
         }
 
-        .msg.user {
-            align-self: flex-start;
-            background: var(--user-msg);
-            color: #000;
-            border-top-right-radius: 0;
+        .msg.user { align-self: flex-start; background: var(--user-msg); border-top-right-radius: 0; }
+        .msg.assistant { align-self: flex-end; background: var(--ai-msg); border-top-left-radius: 0; }
+
+        /* أزرار الحذف */
+        .delete-btn {
+            background: none;
+            border: none;
+            color: var(--danger-color);
+            cursor: pointer;
+            font-size: 14px;
+            padding: 5px;
+            opacity: 0.3;
+            transition: 0.3s;
         }
 
-        .msg.assistant {
-            align-self: flex-end;
-            background: var(--ai-msg);
-            color: #000;
-            border-top-left-radius: 0;
-        }
+        .chat-item:hover .delete-btn, .msg:hover .delete-btn { opacity: 1; }
+        .delete-btn:hover { color: #d63031; transform: scale(1.2); }
 
-        .msg-info {
-            display: block;
-            font-size: 10px;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: var(--primary-color);
-        }
+        .msg-content { display: flex; flex-direction: column; }
+        .msg-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+        .msg-info { font-size: 10px; font-weight: bold; color: var(--primary-color); }
 
-        /* حالة فارغة */
-        .empty-state {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            color: #888;
-        }
-
-        /* سكرول بار احترافي */
+        .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #888; }
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
     </style>
@@ -160,7 +111,7 @@
 <body>
 
     <div class="sidebar">
-        <div class="sidebar-header">محادثات العملاء النشطة</div>
+        <div class="sidebar-header">محادثات العملاء</div>
         <div id="chat-list" class="chat-list">
             <div class="empty-state">جاري تحميل المحادثات...</div>
         </div>
@@ -175,17 +126,16 @@
         <div id="messages-container" class="messages-container">
             <div class="empty-state">
                 <h3>مرحباً بك في لوحة تحكم الشماع</h3>
-                <p>اختر أي محادثة من القائمة اليمنى لعرض تفاصيلها فوراً.</p>
+                <p>اختر محادثة لعرضها، ويمكنك حذف رسائل محددة أو المحادثة كاملة.</p>
             </div>
         </div>
     </div>
 
-    <!-- استدعاء Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        // تم إضافة remove هنا
+        import { getDatabase, ref, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // بيانات Firebase الخاصة بك
         const firebaseConfig = {
             apiKey: "AIzaSyAxMe4Sww_i_O3e_MQXn1dcgkRdKQh6pks",
             authDomain: "elshamaa-ai.firebaseapp.com",
@@ -207,73 +157,88 @@
 
         let currentActiveId = null;
 
-        // 1. مراقبة قائمة المحادثات بالكامل
+        // وظيفة حذف المحادثة بالكامل
+        window.deleteFullChat = function(sessionId, event) {
+            event.stopPropagation(); // منع فتح المحادثة عند النقر على حذف
+            if (confirm("هل أنت متأكد من حذف هذه المحادثة بالكامل؟ لا يمكن التراجع!")) {
+                remove(ref(db, `chats/${sessionId}`))
+                .then(() => {
+                    if (currentActiveId === sessionId) {
+                        currentActiveId = null;
+                        messagesDiv.innerHTML = '<div class="empty-state">تم حذف المحادثة.</div>';
+                        headerTitle.innerText = "اختر عميل";
+                    }
+                });
+            }
+        };
+
+        // وظيفة حذف رسالة واحدة
+        window.deleteSingleMessage = function(sessionId, messageKey) {
+            if (confirm("حذف هذه الرسالة؟")) {
+                remove(ref(db, `chats/${sessionId}/messages/${messageKey}`));
+            }
+        };
+
+        // 1. مراقبة قائمة المحادثات
         onValue(ref(db, 'chats'), (snapshot) => {
             const chats = snapshot.val();
             chatListDiv.innerHTML = "";
 
             if (!chats) {
-                chatListDiv.innerHTML = '<div class="empty-state">لا توجد محادثات حتى الآن.</div>';
+                chatListDiv.innerHTML = '<div class="empty-state">لا توجد محادثات.</div>';
                 return;
             }
 
-            // تحويل الكائن لمصفوفة لترتيبها حسب الأحدث
             const sessionIds = Object.keys(chats).reverse();
-
             sessionIds.forEach(id => {
                 const meta = chats[id].metadata || {};
                 const item = document.createElement('div');
                 item.className = `chat-item ${currentActiveId === id ? 'active' : ''}`;
                 
                 item.innerHTML = `
-                    <div class="user-id">العميل: ${id.replace('user_', '')}</div>
-                    <div class="last-msg">${meta.lastMessage || 'محادثة جديدة...'}</div>
+                    <div class="chat-info" onclick="loadChat('${id}')">
+                        <div class="user-id">العميل: ${id.replace('user_', '')}</div>
+                        <div class="last-msg">${meta.lastMessage || 'محادثة جديدة...'}</div>
+                    </div>
+                    <button class="delete-btn" onclick="deleteFullChat('${id}', event)" title="حذف المحادثة">🗑️</button>
                 `;
-
-                item.onclick = () => {
-                    // تحديث الشكل النشط
-                    document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
-                    item.classList.add('active');
-                    loadChat(id);
-                };
-
                 chatListDiv.appendChild(item);
             });
         });
 
-        // 2. وظيفة تحميل رسائل محادثة معينة
-        function loadChat(sessionId) {
+        // 2. تحميل الرسائل
+        window.loadChat = function(sessionId) {
             currentActiveId = sessionId;
             headerTitle.innerText = "محادثة العميل الحالية";
             sessionIdDisplay.innerText = "ID: " + sessionId;
 
-            // الاستماع للرسائل داخل هذه الجلسة
             onValue(ref(db, `chats/${sessionId}/messages`), (snapshot) => {
-                if (currentActiveId !== sessionId) return; // تأكد أن المستخدم لم يغير المحادثة بسرعة
+                if (currentActiveId !== sessionId) return;
 
                 messagesDiv.innerHTML = "";
                 const msgs = snapshot.val();
 
                 if (!msgs) {
-                    messagesDiv.innerHTML = '<div class="empty-state">لا توجد رسائل في هذه المحادثة.</div>';
+                    messagesDiv.innerHTML = '<div class="empty-state">لا توجد رسائل.</div>';
                     return;
                 }
 
                 Object.keys(msgs).forEach(key => {
                     const m = msgs[key];
                     const msgDiv = document.createElement('div');
-                    msgDiv.className = `msg ${m.role}`; // user أو assistant
+                    msgDiv.className = `msg ${m.role}`;
                     
                     const roleName = m.role === 'user' ? 'العميل' : 'بوت الشماع';
                     msgDiv.innerHTML = `
-                        <span class="msg-info">${roleName}</span>
-                        ${m.text.replace(/\n/g, '<br>')}
+                        <div class="msg-header">
+                            <span class="msg-info">${roleName}</span>
+                            <button class="delete-btn" style="font-size:10px" onclick="deleteSingleMessage('${sessionId}', '${key}')">✕</button>
+                        </div>
+                        <div class="msg-content">${m.text.replace(/\n/g, '<br>')}</div>
                     `;
                     
                     messagesDiv.appendChild(msgDiv);
                 });
-
-                // سكرول تلقائي لآخر رسالة
                 messagesDiv.scrollTop = messagesDiv.scrollHeight;
             });
         }
