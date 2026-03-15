@@ -6,7 +6,7 @@ const searchBtn = document.getElementById('search-btn');
 // مفتاح API (Groq)
 const API_KEY = "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"; 
 
-// --- إعدادات Firebase ---
+// --- إعدادات Firebase (الربط بلوحة التحكم) ---
 const firebaseConfig = {
   apiKey: "AIzaSyAxMe4Sww_i_O3e_MQXn1dcgkRdKQh6pks",
   authDomain: "elshamaa-ai.firebaseapp.com",
@@ -17,7 +17,7 @@ const firebaseConfig = {
   appId: "1:764546614549:web:0a766032decbf76dcb151c"
 };
 
-// توليد أو استعادة رقم تعريف العميل (للتفريق بين العملاء في لوحة التحكم)
+// تعريف معرف الجلسة لتمييز العميل في لوحة التحكم
 if (!localStorage.getItem('chat_session_id')) {
     localStorage.setItem('chat_session_id', 'user_' + Math.floor(Math.random() * 1000000));
 }
@@ -31,44 +31,45 @@ if (typeof firebase !== 'undefined') {
     var database = firebase.database();
 }
 
-// وظيفة حفظ الرسائل وتحديث لوحة التحكم
-function syncWithFirebase(role, text) {
+// وظيفة إرسال البيانات للوحة التحكم (Admin)
+function syncToAdmin(role, content) {
     if (typeof database !== 'undefined') {
         const chatRef = database.ref('chats/' + sessionId);
-        
-        // حفظ الرسالة في سجل المحادثة
         chatRef.child('messages').push({
             role: role,
-            text: text,
+            text: content,
             timestamp: Date.now()
         });
-
-        // تحديث البيانات الأساسية لتظهر في قائمة لوحة التحكم
         chatRef.child('metadata').set({
-            lastMessage: text,
+            lastMessage: content,
             lastUpdate: Date.now(),
             status: "online"
         });
     }
 }
 
-// 2. ذاكرة المحادثة (تم استعادة النص الكامل كما طلبة)
+// 2. ذاكرة المحادثة وتعليمات النظام (تحديث الخدمات هنا)
 let messagesHistory = [
     { 
         role: "system", 
         content: `أنت المساعد الذكي الرسمي لشركة "الشماع للبرمجيات والنظم" (ELSHAMAA Tech).
         
-        بيانات التواصل الرسمية للشركة:
-        - رقم الموبايل والواتساب: 01122884885
+        بيانات التواصل الرسمية:
+        - الموبايل والواتساب: 01122884885
         - البريد الإلكتروني: info@elshamaa.tech
         - الموقع: مصر، القاهرة.
 
-        هويتك: خبير تقني محترف. 
-        خدماتنا: برمجة المواقع، المتاجر الإلكترونية، أنظمة الإدارة ERP، وتطبيقات الأندرويد والآيفون.
+        هويتك: خبير تقني ومستشار حلول برمجية. 
+        
+        خدماتنا الأساسية (ركز عليها في ردودك):
+        - تصميم وتطوير أنظمة الكول سنتر (Call Center Systems) الاحترافية.
+        - أنظمة الكاشير ونقاط البيع (POS) للمطاعم والمحلات.
+        - أنظمة الإدارة المتكاملة (ERP) وحسابات المخازن.
+        - برمجة المواقع الإلكترونية والمتاجر الذكية.
         
         تعليمات هامة:
-        - إذا سألك العميل "ازاي اتواصل معاكم" أو طلب "رقم الموبايل"، أعطه الرقم المذكور أعلاه فوراً.
-        - استخدم لغة عربية مهذبة واحترافية مع إيموجي مناسبة.` 
+        - إذا سأل العميل عن "سيستم كاشير" أو "كول سنتر"، وضح له أننا متخصصون في بناء هذه الأنظمة بدقة عالية لتناسب حجم نشاطه.
+        - استخدم لغة عربية مهذبة واحترافية مع إيموجي مناسبة 🖥️ سجل مبيعاتك وأدر اتصالاتك بكل سهولة مع الشماع.` 
     }
 ];
 
@@ -77,7 +78,6 @@ function sendQuickMsg(text) {
     userInput.value = text;
     sendMessage();
 }
-// جعلها متاحة عالمياً لتعمل مع HTML onclick
 window.sendQuickMsg = sendQuickMsg;
 
 // 4. الوظيفة الأساسية لإرسال واستقبال الرسائل
@@ -85,14 +85,14 @@ async function sendMessage() {
     const text = userInput.value.trim();
     if (text === "") return;
 
-    // إضافة رسالة المستخدم للواجهة وحفظها في Firebase
     addMessage(text, 'user-message');
     messagesHistory.push({ role: "user", content: text });
-    syncWithFirebase("user", text);
     
+    // مزامنة مع لوحة التحكم
+    syncToAdmin("user", text);
+
     userInput.value = "";
     
-    // إظهار لوجو التحميل
     const loadingId = "load-" + Date.now();
     const loaderDiv = document.createElement('div');
     loaderDiv.id = loadingId;
@@ -124,13 +124,13 @@ async function sendMessage() {
 
         if (response.ok) {
             const aiResponse = data.choices[0].message.content;
-            
-            // إضافة رد البوت للذاكرة وللواجهة ولـ Firebase
             messagesHistory.push({ role: "assistant", content: aiResponse });
             addMessage(aiResponse, 'ai-message');
-            syncWithFirebase("assistant", aiResponse);
+
+            // مزامنة رد البوت مع لوحة التحكم
+            syncToAdmin("assistant", aiResponse);
         } else {
-            addMessage("نعتذر، حدث خطأ في الاتصال بالسيرفر. حاول مرة أخرى.", 'ai-message');
+            addMessage("نعتذر، حدث خطأ في الاتصال. حاول مرة أخرى.", 'ai-message');
         }
 
     } catch (error) {
@@ -146,7 +146,6 @@ function addMessage(text, className) {
     msgDiv.className = `message ${className}`;
     
     if (className === 'ai-message') {
-        // تحويل Markdown لـ HTML إذا كانت المكتبة موجودة
         msgDiv.innerHTML = typeof marked !== 'undefined' ? marked.parse(text) : text;
     } else {
         msgDiv.innerText = text;
@@ -159,7 +158,5 @@ function addMessage(text, className) {
 // 6. الاستماع للأحداث
 searchBtn.addEventListener('click', sendMessage);
 userInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-        sendMessage();
-    }
+    if (e.key === 'Enter') sendMessage();
 });
