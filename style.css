@@ -3,8 +3,7 @@
     --secondary-color: #a29bfe;
     --bg-gradient: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
     --glass-bg: rgba(255, 255, 255, 0.1);
-    --shadow-3d: 0 20px 50px rgba(0, 0, 0, 0.5), 
-                 inset 0 0 20px rgba(255, 255, 255, 0.1);
+    --shadow-3d: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.1);
 }
 
 body {
@@ -16,173 +15,73 @@ body {
     justify-content: center;
     align-items: center;
     overflow: hidden;
-    perspective: 1000px; /* لإضافة بعد ثالث للرؤية */
+    perspective: 1000px;
 }
 
-/* خلفية الخداع البصري */
-.background-blobs {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    z-index: -1;
-    overflow: hidden;
-}
-
-.blob {
-    position: absolute;
-    width: 300px;
-    height: 300px;
-    background: var(--primary-color);
-    filter: blur(80px);
-    border-radius: 50%;
-    opacity: 0.4;
-    animation: move 20s infinite alternate;
-}
-
+/* خلفية الفقاعات */
+.background-blobs { position: absolute; width: 100%; height: 100%; z-index: -1; overflow: hidden; }
+.blob { position: absolute; width: 300px; height: 300px; background: var(--primary-color); filter: blur(80px); border-radius: 50%; opacity: 0.3; animation: move 20s infinite alternate; }
 .blob:nth-child(2) { background: #e84393; left: 50%; animation-delay: -5s; }
 .blob:nth-child(3) { background: #00cec9; bottom: 0; right: 0; animation-delay: -10s; }
 
-@keyframes move {
-    from { transform: translate(-20%, -20%) rotate(0deg); }
-    to { transform: translate(20%, 20%) rotate(360deg); }
-}
+@keyframes move { from { transform: translate(-20%, -20%); } to { transform: translate(20%, 20%); } }
 
-/* حاوية الشات 3D */
+/* حاوية الشات */
 .chat-container {
-    width: 420px;
-    height: 650px;
+    width: 450px;
+    height: 700px;
     background: var(--glass-bg);
-    backdrop-filter: blur(15px); /* تأثير الزجاج */
+    backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 30px;
     display: flex;
     flex-direction: column;
     box-shadow: var(--shadow-3d);
-    transform: rotateX(5deg); /* ميلان بسيط للشكل الـ 3D */
-    transition: 0.5s ease;
+    transform: rotateX(2deg);
+    transition: 0.5s;
 }
 
-.chat-container:hover {
-    transform: rotateX(0deg) scale(1.02); /* يتفاعل عند اقتراب الماوس */
+/* الهيدر واللوجو */
+.chat-header { padding: 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+.header-content { display: flex; align-items: center; gap: 15px; }
+.main-logo-icon {
+    width: 45px; height: 45px; background: var(--primary-color); 
+    border-radius: 12px; display: flex; align-items: center; justify-content: center;
+    color: white; font-weight: bold; font-size: 24px; box-shadow: 0 5px 15px rgba(108, 92, 231, 0.4);
 }
-
-/* الهيدر باسم Elshamaa */
-.chat-header {
-    padding: 25px;
-    text-align: center;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.logo-3d {
-    font-size: 28px;
-    font-weight: bold;
-    color: #fff;
-    text-transform: uppercase;
-    letter-spacing: 5px;
-    text-shadow: 2px 2px 0px #6c5ce7, 
-                 4px 4px 0px rgba(0,0,0,0.2);
-    margin-bottom: 5px;
-}
-
-.chat-header span {
-    color: var(--secondary-color);
-    font-size: 0.9em;
-}
+.logo-3d { font-size: 22px; font-weight: bold; color: #fff; letter-spacing: 2px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+.subtitle { color: #00ff88; font-size: 0.8em; display: block; }
+.status-dot { width: 10px; height: 10px; background: #00ff88; border-radius: 50%; position: absolute; bottom: 0; right: 0; border: 2px solid #24243e; }
+.logo-wrapper { position: relative; }
 
 /* منطقة الرسائل */
-.chat-box {
-    flex: 1;
-    padding: 20px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
+.chat-box { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+.message { padding: 12px 18px; border-radius: 18px; font-size: 14px; max-width: 80%; animation: fadeIn 0.4s ease; line-height: 1.6; }
+.ai-message { background: rgba(255, 255, 255, 0.95); color: #2d3436; align-self: flex-start; border-bottom-right-radius: 2px; border-right: 4px solid var(--primary-color); }
+.user-message { background: var(--primary-color); color: white; align-self: flex-end; border-bottom-left-radius: 2px; }
 
-.message {
-    padding: 12px 18px;
-    border-radius: 20px;
-    font-size: 14px;
-    max-width: 85%;
-    position: relative;
-    animation: fadeIn 0.5s ease backwards;
+/* لوجو التحميل (ELSHAMAA Loader) */
+.shamaa-loader { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.1) !important; border: 1px dashed var(--secondary-color) !important; }
+.shamaa-pulse { 
+    width: 25px; height: 25px; background: var(--primary-color); border-radius: 5px; 
+    display: flex; align-items: center; justify-content: center; color: white; font-size: 12px;
+    animation: pulse 1s infinite ease-in-out; 
 }
+@keyframes pulse { 0% { transform: scale(0.9); opacity: 0.7; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(0.9); opacity: 0.7; } }
 
-.ai-message {
-    background: rgba(255, 255, 255, 0.9);
-    color: #2d3436;
-    align-self: flex-start;
-    border-bottom-right-radius: 2px;
-    box-shadow: 5px 5px 15px rgba(0,0,0,0.1);
+/* أزرار سريعة */
+.quick-actions { display: flex; gap: 8px; padding: 10px 20px; overflow-x: auto; }
+.quick-actions button {
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+    color: white; padding: 7px 15px; border-radius: 20px; cursor: pointer; white-space: nowrap; font-size: 12px; transition: 0.3s;
 }
+.quick-actions button:hover { background: var(--primary-color); }
 
-.user-message {
-    background: var(--primary-color);
-    color: white;
-    align-self: flex-end;
-    border-bottom-left-radius: 2px;
-    box-shadow: -5px 5px 15px rgba(108, 92, 231, 0.3);
-}
+/* مدخلات النص */
+.input-area { padding: 20px; display: flex; gap: 10px; background: rgba(0,0,0,0.2); border-bottom-left-radius: 30px; border-bottom-right-radius: 30px; }
+#user-input { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); padding: 12px; border-radius: 12px; color: white; outline: none; }
+#search-btn { background: var(--primary-color); color: white; border: none; padding: 10px 20px; border-radius: 12px; cursor: pointer; }
 
-/* منطقة الإدخال */
-.input-area {
-    padding: 20px;
-    display: flex;
-    gap: 10px;
-    background: rgba(0, 0, 0, 0.2);
-}
-
-#user-input {
-    flex: 1;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 12px 20px;
-    border-radius: 15px;
-    color: white;
-    outline: none;
-    transition: 0.3s;
-}
-
-#user-input:focus {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: var(--secondary-color);
-    box-shadow: 0 0 15px var(--primary-color);
-}
-
-#search-btn {
-    background: var(--primary-color);
-    color: white;
-    border: none;
-    padding: 10px 25px;
-    border-radius: 15px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: 0.3s;
-    box-shadow: 0 4px 15px rgba(108, 92, 231, 0.4);
-}
-
-#search-btn:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 20px rgba(108, 92, 231, 0.6);
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* تخصيص السكرول بار */
-::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-thumb { background: var(--glass-bg); border-radius: 10px; }
-
-/* Markdown styling for AI messages */
-.ai-message ul, .ai-message ol {
-    padding-right: 20px;
-    margin: 10px 0;
-}
-.ai-message li {
-    margin-bottom: 5px;
-}
-.ai-message strong {
-    color: #6c5ce7;
-}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-thumb { background: var(--primary-color); border-radius: 10px; }
