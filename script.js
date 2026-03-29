@@ -4,7 +4,7 @@ const userInput = document.getElementById('user-input');
 const searchBtn = document.getElementById('search-btn');
 
 // مفتاح API (Groq)
-const API_KEY = "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"; 
+const API_KEY = "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"; 
 
 // --- إعدادات Firebase (الربط بلوحة التحكم) ---
 const firebaseConfig = {
@@ -88,8 +88,10 @@ async function sendMessage() {
     addMessage(text, 'user-message');
     messagesHistory.push({ role: "user", content: text });
     
-    // مزامنة مع لوحة التحكم
-    syncToAdmin("user", text);
+    // مزامنة مع لوحة التحكم (مع معالجة الأخطاء لضمان عدم توقف الشات)
+    try {
+        syncToAdmin("user", text);
+    } catch(e) { console.error("Firebase Sync Error:", e); }
 
     userInput.value = "";
     
@@ -112,7 +114,7 @@ async function sendMessage() {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                model: "llama-3.3-70b-versatile",
+                model: "llama-3.3-70b-versatile", // تأكد من دقة هذا الاسم من موقع Groq
                 messages: messagesHistory,
                 temperature: 0.6,
                 max_tokens: 1000
@@ -120,22 +122,25 @@ async function sendMessage() {
         });
 
         const data = await response.json();
-        loaderDiv.remove();
+        console.log("Groq API Response:", data); // هذا السطر سيظهر لك سبب الخطأ في الـ Console
+
+        if (loaderDiv) loaderDiv.remove();
 
         if (response.ok) {
             const aiResponse = data.choices[0].message.content;
             messagesHistory.push({ role: "assistant", content: aiResponse });
             addMessage(aiResponse, 'ai-message');
-
-            // مزامنة رد البوت مع لوحة التحكم
             syncToAdmin("assistant", aiResponse);
         } else {
-            addMessage("نعتذر، حدث خطأ في الاتصال. حاول مرة أخرى.", 'ai-message');
+            // عرض رسالة خطأ مفصلة للفهم
+            const errorMsg = data.error ? data.error.message : "حدث خطأ غير معروف";
+            console.error("API Error Detail:", errorMsg);
+            addMessage("عذراً، هناك مشكلة في النظام: " + errorMsg, 'ai-message');
         }
 
     } catch (error) {
-        if(document.getElementById(loadingId)) loaderDiv.remove();
-        console.error("Error:", error);
+        if (loaderDiv) loaderDiv.remove();
+        console.error("Network/Fetch Error:", error);
         addMessage("تأكد من اتصالك بالإنترنت وحاول مجدداً.", 'ai-message');
     }
 }
